@@ -1,0 +1,20 @@
+name: "🔨 Refactor"
+description: "코드 리팩토링"
+labels: ["🔨 Refactor"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 리팩토링 설명
+      description: 어떤 부분을 리팩토링할지 작성해 주세요.
+      placeholder: 모듈화, 중복 제거, 구조 개선 등
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 리팩토링 목표
+      description: 리팩토링 후 기대되는 개선 사항을 작성해 주세요.
+      placeholder: 코드 가독성 향상, 성능 최적화 등
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 사항
+      description: 관련 이슈나 참고할 자료가 있다면 작성해 주세요.

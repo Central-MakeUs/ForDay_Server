@@ -1,0 +1,32 @@
+name: "🐞 Bug Report"
+description: "버그 제보"
+labels: ["🐞 BugFix"]
+body:
+  - type: textarea
+    attributes:
+      label: 🐞 버그 설명
+      description: 어떤 문제가 발생했는지 작성해 주세요.
+      placeholder: 문제가 무엇인지 명확히 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🔁 재현 방법
+      description: 버그를 재현하기 위한 단계를 작성해 주세요.
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 예상 동작
+      description: 정상적으로 동작했을 때의 결과를 작성해 주세요.
+      placeholder: 기대한 동작을 적어주세요.
+  - type: textarea
+    attributes:
+      label: 📷 스크린샷/로그
+      description: 스크린샷이나 로그가 있다면 첨부해 주세요.
+  - type: input
+    attributes:
+      label: 💻 환경
+      description: 버그가 발생한 환경(OS, 브라우저/버전 등)
+      placeholder: "예: macOS, Chrome 120"

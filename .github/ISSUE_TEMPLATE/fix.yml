@@ -1,0 +1,31 @@
+name: "🛠️ Fix"
+description: "기능 수정 작업"
+labels: ["🛠️ Fix"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 수정 내용
+      description: 어떤 기능을 왜 수정하는지 명확히 작성해 주세요.
+      placeholder: |
+        예)
+        - 기존 검색 로직에서 조건 누락으로 잘못된 결과가 노출됨
+        - 사용자 요청에 따라 필터 동작 방식 개선
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 📝 체크리스트
+      description: 수정 후 반드시 확인해야 할 항목들을 체크해 주세요.
+      placeholder: |
+        - [ ] 기존 기능 영향도 검토
+        - [ ] 단위 테스트 수정/추가
+        - [ ] 회귀 테스트 완료
+        - [ ] 배포 대상 브랜치 확인
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 🔗 참고 사항
+      description: 관련 PR, 이슈, 기획 문서, 스크린샷 등을 첨부해 주세요.

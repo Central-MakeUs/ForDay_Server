@@ -1,0 +1,25 @@
+name: "🌏 Deploy"
+description: "배포 관련 작업"
+labels: ["🌏 Deploy"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 설명
+      description: 배포 목적과 작업 내용을 작성해 주세요.
+      placeholder: 예) v1.2.0 기능 추가 배포
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📝 체크리스트
+      description: 배포 전 확인해야 할 항목들을 작성해 주세요.
+      placeholder: |
+        - [ ] 테스트 완료
+        - [ ] 환경 변수 설정 확인
+        - [ ] DB 마이그레이션 적용
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 사항
+      description: 릴리즈 노트, 관련 PR/이슈 링크 등을 작성해 주세요.
