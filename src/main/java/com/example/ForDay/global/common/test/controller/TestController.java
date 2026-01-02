@@ -27,6 +27,11 @@ public class TestController {
         return new TestResponseDto("테스트에 성공하였습니다!");
     }
 
+    @GetMapping("/auth/check")
+    public TestResponseDto authCheck() {
+        return new TestResponseDto("인증에 성공하였습니다!");
+    }
+
     @Operation(
             summary = "에러 테스트",
             description = "테스트용 커스텀 예외를 발생시킵니다."

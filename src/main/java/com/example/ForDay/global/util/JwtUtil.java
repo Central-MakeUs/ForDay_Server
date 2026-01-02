@@ -80,4 +80,12 @@ public class JwtUtil {
                 .signWith(secretKey)
                 .compact();
     }
+
+    public boolean validate(String token) {
+        try {
+            return !isExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

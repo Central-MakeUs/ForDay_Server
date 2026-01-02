@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "토큰 재발급 요청 DTO")
-public class RefreshRequestDto {
+public class RefreshReqDto {
 
     @NotBlank(message = "리프레시 토큰은 필수 값입니다.")
     @Schema(

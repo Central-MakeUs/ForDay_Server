@@ -11,17 +11,14 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public void save(Long userId, String refreshToken) {
-        refreshTokenRepository.save(new RefreshToken(userId, refreshToken));
+    public void save(String username, String refreshToken) {
+        refreshTokenRepository.save(new RefreshToken(username, refreshToken));
     }
 
-    public String get(String userId) {
-        return refreshTokenRepository.findById(userId)
+    public String get(String username) {
+        return refreshTokenRepository.findById(username)
                 .map(RefreshToken::getToken)
                 .orElse(null);
     }
-
-    public void delete(String userId) {
-        refreshTokenRepository.deleteById(userId);
-    }
 }
+
