@@ -1,6 +1,6 @@
-package com.example.ForDay.domain.test.controller;
+package com.example.ForDay.global.common.test.controller;
 
-import com.example.ForDay.domain.test.dto.response.TestResponseDto;
+import com.example.ForDay.global.common.test.dto.response.TestResponseDto;
 import com.example.ForDay.global.common.error.exception.CustomException;
 import com.example.ForDay.global.common.error.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
