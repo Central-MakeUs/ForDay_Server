@@ -34,7 +34,7 @@ freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수�
 | D1 | DIP | `domain`은 `infra` 구현체에 의존하지 않는다 | 🔴 위반 20+ → Phase 2 |
 | D2 | DIP | 엔티티는 `dto`에 의존하지 않는다 | 🔴 위반 5 → Phase 1 |
 | D3 | DIP | 엔티티는 Spring에 의존하지 않는다 | 🔴 위반 1 → Phase 1 |
-| D4 | DIP | `..port..`는 인터페이스만 포함한다 | 🟢 활성 (신규) |
+| D4 | DIP | 포트(`*Port`)는 인터페이스여야 한다 | 🟢 활성 (신규) |
 | D5 | DIP | 도메인은 `RestTemplate`을 직접 쓰지 않는다 | 🔴 위반 1 → Phase 2 |
 | S1 | SRP | 클래스당 주입 의존성 ≤ 8 | 🟡 레거시 7개 예외 |
 | S2 | SRP | 컨트롤러는 리포지토리에 직접 의존하지 않는다 | 🟢 활성 |
@@ -69,7 +69,9 @@ freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수�
 | `User.java:10` — `org.springframework.util.StringUtils.hasText` (147행 1회 사용) | **Phase 1에서 제거.** `nickname != null && !nickname.isBlank()`로 바꾸면 끝난다 |
 | `RefreshToken.java` — `@RedisHash`, `@Id`(Spring Data) | **규칙 예외.** Redis 해시 엔티티는 Spring Data Redis 없이 표현할 수 없다. `@RedisHash`가 붙은 클래스는 규칙 대상에서 제외한다 |
 
-**D4. `..port..` 패키지에는 인터페이스만 둔다.** 구현체가 섞이면 포트가 아니다.
+**D4. 포트(`*Port`)는 인터페이스여야 한다.** 구현체가 섞이면 포트가 아니다.
+
+포트 시그니처에 쓰이는 값 객체(`PushMessage`, `UploadTarget`)는 포트 계약의 일부라 같은 패키지에 두지만, 그 자체가 포트는 아니므로 D4·I1의 검사 대상이 아니다.
 
 **D5. 도메인은 `RestTemplate`을 직접 쓰지 않는다.** 현재 `AppleService:116`이 메서드 안에서 `new RestTemplate()`을 생성해 스텁 주입 지점 자체가 없다.
 
@@ -227,6 +229,7 @@ class ArchitectureTest {
     static final ArchRule D4_포트는_인터페이스여야_한다 =
             classes()
                     .that().resideInAPackage("..port..")
+                    .and().haveSimpleNameEndingWith("Port")
                     .should().beInterfaces()
                     .allowEmptyShould(true)
                     .because("구현체가 섞이면 포트가 아니다");
@@ -314,6 +317,7 @@ class ArchitectureTest {
     static final ArchRule I1_포트는_작게_유지한다 =
             classes()
                     .that().resideInAPackage("..port..")
+                    .and().haveSimpleNameEndingWith("Port")
                     .should(메서드가_제한_이하())
                     .allowEmptyShould(true)
                     .because("클라이언트가 쓰지 않는 메서드에 의존하게 만들지 않는다");
