@@ -19,11 +19,24 @@ testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'  // 버전은 �
 
 실행: `./gradlew test --tests "ArchitectureTest"`
 
-**위반이 남아 있는 규칙은 `@ArchIgnore("Phase N 완료 후 활성화")`로 표시**하고, 해당 Phase가 끝나면 애노테이션을 제거한다.
+**위반이 남아 있는 규칙은 `@ArchIgnore(reason = "Phase N 완료 후 활성화")`로 표시**하고, 해당 Phase가 끝나면 애노테이션을 제거한다.
 
-> JUnit의 `@Disabled`는 `@ArchTest` 필드에 적용되지 않는다. ArchUnit 자체 애노테이션인 `@ArchIgnore`(`com.tngtech.archunit.junit.ArchIgnore`)를 써야 한다.
+> JUnit의 `@Disabled`는 `@ArchTest` 필드에 적용되지 않는다. ArchUnit 자체 애노테이션인 `@ArchIgnore`(`com.tngtech.archunit.junit.ArchIgnore`)를 써야 한다. 속성명은 `value`가 아니라 **`reason`** 이므로 `@ArchIgnore("...")`는 컴파일되지 않는다.
 
-freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수준이고 Phase 1·2에서 전부 제거할 대상이라, 저장 파일 관리 비용이 이득보다 크다.
+freeze(violation store)는 쓰지 않는다. 위반이 Phase 1·2에서 전부 제거할 대상이라 저장 파일 관리 비용이 이득보다 크다.
+
+**현재 위반 규모** (규칙을 일시 활성화해 측정, 2026-08-30):
+
+| 규칙 | 위반 엣지 | 해소 |
+| --- | --- | --- |
+| D1 도메인→인프라 | 68 | Phase 2 |
+| D2 엔티티→DTO | 48 | Phase 1 |
+| I2 record→hobby.dto | 9 | Phase 1 |
+| D5 RestTemplate 직접 사용 | 2 | Phase 2 |
+| D3 엔티티→Spring | 1 | Phase 1 |
+| S4 순환 의존 | 94 | Phase 3 이후 |
+
+파일 수로는 25개 남짓이지만 의존 엣지 기준으로는 위 표가 정확하다.
 
 ---
 
@@ -31,20 +44,20 @@ freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수�
 
 | ID | 원칙 | 규칙 | 현재 상태 |
 | --- | --- | --- | --- |
-| D1 | DIP | `domain`은 `infra` 구현체에 의존하지 않는다 | 🔴 위반 20+ → Phase 2 |
-| D2 | DIP | 엔티티는 `dto`에 의존하지 않는다 | 🔴 위반 5 → Phase 1 |
+| D1 | DIP | `domain`은 `infra` 구현체에 의존하지 않는다 | 🔴 68건 → Phase 2 |
+| D2 | DIP | 엔티티는 `dto`에 의존하지 않는다 | 🔴 48건 → Phase 1 |
 | D3 | DIP | 엔티티는 Spring에 의존하지 않는다 | 🔴 위반 1 → Phase 1 |
 | D4 | DIP | `..port..`는 인터페이스만 포함한다 | 🟢 활성 (신규) |
-| D5 | DIP | 도메인은 `RestTemplate`을 직접 쓰지 않는다 | 🔴 위반 1 → Phase 2 |
+| D5 | DIP | 도메인은 `RestTemplate`을 직접 쓰지 않는다 | 🔴 2건 → Phase 2 |
 | S1 | SRP | 클래스당 주입 의존성 ≤ 8 | 🟡 레거시 7개 예외 |
 | S2 | SRP | 컨트롤러는 리포지토리에 직접 의존하지 않는다 | 🟢 활성 |
 | S3 | SRP | 컨트롤러는 대응 `Docs` 인터페이스를 구현한다 | 🟢 활성 |
-| S4 | SRP | 도메인 간 순환 의존이 없다 | 🔴 미측정 → Phase 3 이후 |
+| S4 | SRP | 도메인 간 순환 의존이 없다 | 🔴 94건 → Phase 3 이후 |
 | O1 | OCP | 도메인은 어댑터 구현체를 직접 참조하지 않는다 | 🟢 활성 (신규) |
 | L1 | LSP | 포트 구현체는 `UnsupportedOperationException`을 던지지 않는다 | 🟢 활성 (신규) |
 | L2 | LSP | 서비스는 다른 서비스를 상속하지 않는다 | 🟢 활성 |
 | I1 | ISP | 포트 인터페이스의 메서드는 5개 이하 | 🟢 활성 (신규) |
-| I2 | ISP | 도메인 간 DTO 교차 참조 금지 | 🔴 위반 1 → Phase 1 |
+| I2 | ISP | 도메인 간 DTO 교차 참조 금지 | 🔴 9건 → Phase 1 |
 
 🟢 즉시 활성 · 🟡 예외 목록과 함께 활성 · 🔴 `@ArchIgnore` 후 해당 Phase에서 활성
 
@@ -54,7 +67,7 @@ freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수�
 
 > 상위 정책은 하위 세부사항에 의존하지 않는다. 둘 다 추상에 의존한다.
 
-이 프로젝트에서 가장 크게 깨져 있는 원칙이다. 도메인 서비스가 S3·Lambda·FCM·FastAPI를 **구체 클래스로** 직접 붙잡고 있어(20개 파일), 도메인 로직만 떼어 테스트할 수 없다.
+이 프로젝트에서 가장 크게 깨져 있는 원칙이다. 도메인 서비스가 S3·Lambda·FCM·FastAPI를 **구체 클래스로** 직접 붙잡고 있어(의존 엣지 68건), 도메인 로직만 떼어 테스트할 수 없다.
 
 **D1. `domain`은 `infra` 구현체에 의존하지 않는다.** 외부 자원 접근은 포트 인터페이스를 통한다.
 
@@ -109,7 +122,8 @@ freeze(violation store)는 쓰지 않는다. 현재 위반이 25개 파일 수�
 
 디버그용 컨트롤러 2개(`TestNotificationController`, `global/common/test/controller/TestController`)는 Docs 인터페이스가 없고 만들 이유도 없으므로, 이름이 `Test`로 시작하는 클래스를 제외한다. (S1의 레거시 예외 목록과 달리 이건 영구 제외다.)
 
-**S4. 도메인 간 순환 의존이 없다.** 현재 미측정 — 활성화 전에 실제 사이클을 먼저 확인해야 한다.
+**S4. 도메인 간 순환 의존이 없다.** 측정 결과 순환 위반 94건으로, 도메인 간 사이클이 이미 존재한다.
+활성화하려면 사이클을 먼저 끊어야 하므로 Phase 3 이후로 미룬다.
 
 ---
 
@@ -163,234 +177,62 @@ ArchUnit으로 표현할 수 없어 사람이 봐야 하는 항목이다. **위 
 
 ## 8. ArchUnit 실행 코드
 
-`src/test/java/com/example/ForDay/architecture/ArchitectureTest.java`
+**구현 위치: `src/test/java/com/example/ForDay/architecture/ArchitectureTest.java`**
 
-```java
-package com.example.ForDay.architecture;
+규칙 코드의 정본은 그 파일이다. 이 문서에 Java 코드를 복제해두면 반드시 어긋나므로 두지 않는다.
+이 문서는 **왜 그 규칙인지**를, 테스트 파일은 **어떻게 검사하는지**를 담당한다.
 
-import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaModifier;
-import com.tngtech.archunit.core.importer.ImportOption;
-import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchIgnore;
-import com.tngtech.archunit.junit.ArchTest;
-import com.tngtech.archunit.lang.ArchCondition;
-import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.lang.ConditionEvents;
-import com.tngtech.archunit.lang.SimpleConditionEvent;
-import org.springframework.data.redis.core.RedisHash;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+실행:
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
-import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
-
-@AnalyzeClasses(
-        packages = "com.example.ForDay",
-        importOptions = ImportOption.DoNotIncludeTests.class
-)
-class ArchitectureTest {
-
-    private static final int MAX_INJECTED_DEPENDENCIES = 8;
-    private static final int MAX_PORT_METHODS = 5;
-
-    // ==================== DIP ====================
-
-    @ArchTest
-    @ArchIgnore("Phase 2(포트 도입) 완료 후 활성화")
-    static final ArchRule D1_도메인은_인프라에_의존하지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..domain..")
-                    .should().dependOnClassesThat().resideInAPackage("..infra..")
-                    .because("외부 자원 접근은 포트 인터페이스를 통한다");
-
-    @ArchTest
-    @ArchIgnore("Phase 1(엔티티 DTO 의존 제거) 완료 후 활성화")
-    static final ArchRule D2_엔티티는_DTO에_의존하지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..domain..entity..")
-                    .should().dependOnClassesThat().resideInAPackage("..dto..")
-                    .because("안쪽(도메인)은 바깥쪽(웹)을 알지 않는다");
-
-    @ArchTest
-    @ArchIgnore("Phase 1(User.StringUtils 제거) 완료 후 활성화")
-    static final ArchRule D3_엔티티는_스프링에_의존하지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..domain..entity..")
-                    // Redis 해시 엔티티는 Spring Data Redis 없이 표현 불가 — 영구 예외
-                    .and().areNotAnnotatedWith(RedisHash.class)
-                    .should().dependOnClassesThat().resideInAPackage("org.springframework..")
-                    .because("JPA 애노테이션은 허용하되 스프링 컨테이너는 알지 않는다");
-
-    @ArchTest
-    static final ArchRule D4_포트는_인터페이스여야_한다 =
-            classes()
-                    .that().resideInAPackage("..port..")
-                    .should().beInterfaces()
-                    .allowEmptyShould(true)
-                    .because("구현체가 섞이면 포트가 아니다");
-
-    @ArchTest
-    @ArchIgnore("Phase 2(AppleIdentityPort 도입) 완료 후 활성화")
-    static final ArchRule D5_도메인은_RestTemplate을_직접_쓰지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..domain..")
-                    .should().dependOnClassesThat().areAssignableTo(RestTemplate.class)
-                    .because("외부 HTTP 호출은 어댑터가 담당한다");
-
-    // ==================== SRP ====================
-
-    @ArchTest
-    static final ArchRule S1_서비스의_주입_의존성이_과하지_않다 =
-            classes()
-                    .that().resideInAPackage("..service..")
-                    // EndingWith가 아니라 Containing — V2/V3 접미사 클래스가 빠지면 안 된다
-                    .and().haveSimpleNameContaining("Service")
-                    // 아래 7개는 레거시 예외. 목록은 줄어들기만 한다 — 새 클래스 추가 금지.
-                    .and().doNotHaveSimpleName("ActivityRecordServiceV2")   // 19
-                    .and().doNotHaveSimpleName("HobbyService")              // 18
-                    .and().doNotHaveSimpleName("ActivityRecordService")     // 17
-                    .and().doNotHaveSimpleName("ReactionService")           // 12
-                    .and().doNotHaveSimpleName("ActivityService")           // 12
-                    .and().doNotHaveSimpleName("AuthService")               // 11
-                    .and().doNotHaveSimpleName("UserService")               // 10
-                    .should(주입_의존성이_제한_이하())
-                    .because("주입 의존성 개수는 책임 과다의 가장 신뢰할 만한 신호다");
-
-    @ArchTest
-    static final ArchRule S2_컨트롤러는_리포지토리를_직접_쓰지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..controller..")
-                    .should().dependOnClassesThat().resideInAPackage("..repository..")
-                    .because("컨트롤러는 매핑과 서비스 위임만 한다");
-
-    @ArchTest
-    static final ArchRule S3_컨트롤러는_Docs_인터페이스를_구현한다 =
-            classes()
-                    // 이름이 아니라 애노테이션으로 고른다 — HobbyControllerV2 등이 누락되지 않도록
-                    .that().areAnnotatedWith(RestController.class)
-                    .and().resideInAPackage("..controller..")
-                    // 디버그용 컨트롤러는 영구 제외
-                    .and().haveSimpleNameNotStartingWith("Test")
-                    .should(Docs_인터페이스를_구현한다())
-                    .because("Swagger 애노테이션은 Docs 인터페이스에만 둔다");
-
-    @ArchTest
-    @ArchIgnore("실제 사이클 측정 후 활성화 — Phase 3 이후")
-    static final ArchRule S4_도메인_간_순환_의존이_없다 =
-            slices()
-                    .matching("com.example.ForDay.domain.(*)..")
-                    .should().beFreeOfCycles();
-
-    // ==================== OCP / LSP ====================
-
-    @ArchTest
-    static final ArchRule O1_도메인은_어댑터_구현체를_직접_참조하지_않는다 =
-            noClasses()
-                    .that().resideInAPackage("..domain..")
-                    .and().resideOutsideOfPackage("..config..")
-                    .should().dependOnClassesThat().haveSimpleNameEndingWith("Adapter")
-                    .because("어댑터 조립은 config에서만 한다");
-
-    @ArchTest
-    static final ArchRule L1_어댑터는_계약을_거부하지_않는다 =
-            noClasses()
-                    .that().haveSimpleNameEndingWith("Adapter")
-                    .should().accessClassesThat().areAssignableTo(UnsupportedOperationException.class)
-                    .allowEmptyShould(true)
-                    .because("지원하지 않는 메서드가 있다면 포트를 쪼개야 한다");
-
-    @ArchTest
-    static final ArchRule L2_서비스는_다른_서비스를_상속하지_않는다 =
-            classes()
-                    .that().resideInAPackage("..service..")
-                    .should(다른_서비스를_상속하지_않는다())
-                    .because("버전 간 코드 공유는 상속이 아니라 조합(공유 UseCase 주입)으로 한다");
-
-    // ==================== ISP ====================
-
-    @ArchTest
-    static final ArchRule I1_포트는_작게_유지한다 =
-            classes()
-                    .that().resideInAPackage("..port..")
-                    .should(메서드가_제한_이하())
-                    .allowEmptyShould(true)
-                    .because("클라이언트가 쓰지 않는 메서드에 의존하게 만들지 않는다");
-
-    @ArchTest
-    @ArchIgnore("Phase 1(ActivityRecord → hobby.dto 제거) 완료 후 활성화")
-    static final ArchRule I2_도메인_간_DTO_교차_참조_금지 =
-            noClasses()
-                    .that().resideInAPackage("..domain.record..")
-                    .should().dependOnClassesThat().resideInAPackage("..domain.hobby.dto..")
-                    .because("컨텍스트 간 통신은 DTO가 아니라 도메인 타입으로 한다");
-
-    // ==================== 커스텀 조건 ====================
-
-    private static ArchCondition<JavaClass> 주입_의존성이_제한_이하() {
-        return new ArchCondition<>("주입 의존성이 " + MAX_INJECTED_DEPENDENCIES + "개 이하여야 한다") {
-            @Override
-            public void check(JavaClass item, ConditionEvents events) {
-                long count = item.getFields().stream()
-                        .filter(f -> f.getModifiers().contains(JavaModifier.FINAL))
-                        .filter(f -> !f.getModifiers().contains(JavaModifier.STATIC))
-                        .count();
-                if (count > MAX_INJECTED_DEPENDENCIES) {
-                    events.add(SimpleConditionEvent.violated(item, String.format(
-                            "%s 의 주입 의존성이 %d개다 (최대 %d개) — 책임을 쪼갤 것",
-                            item.getName(), count, MAX_INJECTED_DEPENDENCIES)));
-                }
-            }
-        };
-    }
-
-    private static ArchCondition<JavaClass> 메서드가_제한_이하() {
-        return new ArchCondition<>("메서드가 " + MAX_PORT_METHODS + "개 이하여야 한다") {
-            @Override
-            public void check(JavaClass item, ConditionEvents events) {
-                int count = item.getMethods().size();
-                if (count > MAX_PORT_METHODS) {
-                    events.add(SimpleConditionEvent.violated(item, String.format(
-                            "%s 의 메서드가 %d개다 (최대 %d개) — 역할별로 포트를 분리할 것",
-                            item.getName(), count, MAX_PORT_METHODS)));
-                }
-            }
-        };
-    }
-
-    private static ArchCondition<JavaClass> Docs_인터페이스를_구현한다() {
-        return new ArchCondition<>("대응 Docs 인터페이스를 구현해야 한다") {
-            @Override
-            public void check(JavaClass item, ConditionEvents events) {
-                boolean implemented = item.getAllRawInterfaces().stream()
-                        .anyMatch(i -> i.getSimpleName().endsWith("Docs"));
-                if (!implemented) {
-                    events.add(SimpleConditionEvent.violated(item,
-                            item.getName() + " 에 대응하는 Docs 인터페이스가 없다"));
-                }
-            }
-        };
-    }
-
-    private static ArchCondition<JavaClass> 다른_서비스를_상속하지_않는다() {
-        return new ArchCondition<>("다른 서비스를 상속하지 않는다") {
-            @Override
-            public void check(JavaClass item, ConditionEvents events) {
-                item.getRawSuperclass().ifPresent(parent -> {
-                    if (parent.getSimpleName().endsWith("Service")) {
-                        events.add(SimpleConditionEvent.violated(item, String.format(
-                                "%s 가 %s 를 상속한다 — 조합으로 바꿀 것",
-                                item.getName(), parent.getName())));
-                    }
-                });
-            }
-        };
-    }
-}
+```
+./gradlew test --tests "ArchitectureTest"
 ```
 
----
+### 구현 시 주의할 점
+
+작성 과정에서 실제로 걸렸던 함정들이다.
+
+**1. `@ArchIgnore`의 속성명은 `reason`이다.**
+`@ArchIgnore("...")`는 `cannot find symbol: method value()`로 컴파일 실패한다.
+
+**2. 이름 기반 선택자는 버전 접미사 클래스를 누락시킨다.**
+`haveSimpleNameEndingWith("Service")`는 `ActivityRecordServiceV2`(주입 19개, 최악의 위반)를,
+`haveSimpleNameEndingWith("Controller")`는 `HobbyControllerV2`·`ActivityRecordControllerV2/V3`를 통째로 건너뛴다.
+→ `haveSimpleNameContaining` 또는 애노테이션 기반(`areAnnotatedWith(RestController.class)`) 선택자를 쓴다.
+
+**3. 이름만으로 어댑터를 거르면 서드파티가 걸린다.**
+`haveSimpleNameEndingWith("Adapter")`는 `io.jsonwebtoken.LocatorAdapter`(JJWT)를 잡아
+`MyKeyLocator`가 O1 위반으로 뜬다. 패키지 조건을 AND로 걸어 우리 코드로 한정한다.
+
+```java
+private static final DescribedPredicate<JavaClass> 우리가_만든_어댑터 =
+        resideInAPackage("com.example.ForDay..")
+                .and(simpleNameEndingWith("Adapter"))
+                .as("우리 코드베이스의 어댑터 구현체");
+```
+
+**4. 아직 존재하지 않는 패키지를 대상으로 하는 규칙은 `allowEmptyShould(true)`가 필요하다.**
+`..port..`는 Phase 2에서 생기므로 D4·I1·L1이 여기 해당한다.
+
+**5. 컴파일·테스트 인코딩을 UTF-8로 고정해야 한다.**
+지정하지 않으면 Windows에서 플랫폼 기본(MS949)을 써 한글 규칙명과 실패 메시지가 깨지고,
+CI(Linux)와 로컬의 빌드 결과가 갈린다. `build.gradle`에 반영되어 있다.
+
+```gradle
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('test') { defaultCharacterEncoding = 'UTF-8' }
+```
+
+### 커스텀 조건
+
+ArchUnit 기본 문법으로 표현되지 않아 `ArchCondition`을 직접 구현한 규칙이다.
+
+| 조건 | 쓰이는 규칙 | 판정 기준 |
+| --- | --- | --- |
+| `주입_의존성이_제한_이하` | S1 | non-static final 필드 개수 |
+| `메서드가_제한_이하` | I1 | 인터페이스의 메서드 개수 |
+| `Docs_인터페이스를_구현한다` | S3 | 구현 인터페이스 중 이름이 `Docs`로 끝나는 것 존재 |
+| `다른_서비스를_상속하지_않는다` | L2 | 상위 클래스 이름이 `Service`로 끝나는지 |
 
 ## 9. 규칙 변경 절차
 
